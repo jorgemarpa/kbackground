@@ -1,10 +1,10 @@
 site_name: kbackground
-av:
-    - Home: index.md
+nav:
+    - Home: README.md
     - Demo: example.ipynb
+    - API: kbackground.md
 theme:
-  name: "material"
-  scheme: slate
+  name: material
   primary: green
   accent: red
   icon:
