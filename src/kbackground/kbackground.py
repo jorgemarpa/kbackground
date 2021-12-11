@@ -1,9 +1,10 @@
-from scipy import sparse
-import numpy as np
-from patsy import dmatrix
 from dataclasses import dataclass
+
+import numpy as np
 from astropy.io import fits
 from astropy.stats import sigma_clip
+from patsy import dmatrix
+from scipy import sparse
 
 
 @dataclass
@@ -13,15 +14,26 @@ class Estimator:
     Parameters
     ----------
 
-
+    row: np.ndarray
+        1D array of row positions for pixels to calculate the background model of with shape npixels
+    column: np.ndarray
+        1D array of column positions for pixels to calculate the background model of with shape npixels
+    flux : np.ndarray
+        2D array of fluxes with shape ntimes x npixels
+    cadenceno : np.ndarray
+        1D array of cadence numbers with shape ntimes
     """
-    row:np.ndarray
-    column:np.ndarray
-    flux:np.ndarray
-    cadenceno:np.ndarray
+
+    row: np.ndarray
+    column: np.ndarray
+    flux: np.ndarray
+    cadenceno: np.ndarray
 
     def __post_init__(self):
-        self.xknots, self.yknots = xknots, yknots = np.linspace(20, 1108, 42)[1:-1], np.linspace(27, 1040, 42)[1:-1]
+        self.xknots, self.yknots = (
+            np.linspace(20, 1108, 42)[1:-1],
+            np.linspace(27, 1040, 8)[1:-1],
+        )
         self.mask = ~sigma_clip(np.median(self.flux, axis=0)).mask
 
         med_flux = np.median(self.flux, axis=0)[None, :]
@@ -30,11 +42,16 @@ class Estimator:
         self.A = self._make_A(self.row, self.column)
         prior_mu = np.zeros(self.A.shape[1])
         prior_mu[0] = 1
-        prior_mu = (self.flux_offset[:, None] * prior_mu)
+        prior_mu = self.flux_offset[:, None] * prior_mu
         prior_sigma = np.ones(self.A.shape[1]) * 40
 
-        self.sigma_w_inv = self.A[self.mask].T.dot(self.A[self.mask]) + np.diag(1 / prior_sigma ** 2)
-        Bs = self.A[self.mask].T.dot((self.flux - med_flux)[:, self.mask].T) + (prior_mu/prior_sigma**2).T
+        self.sigma_w_inv = self.A[self.mask].T.dot(self.A[self.mask]) + np.diag(
+            1 / prior_sigma ** 2
+        )
+        Bs = (
+            self.A[self.mask].T.dot((self.flux - med_flux)[:, self.mask].T)
+            + (prior_mu / prior_sigma ** 2).T
+        )
         self.ws = np.linalg.solve(self.sigma_w_inv, Bs).T
         self._model_row = self.row
         self._model_column = self.column
@@ -43,19 +60,26 @@ class Estimator:
     @staticmethod
     def from_mission_bkg(fname):
         hdu = fits.open(fname)
-        self = Estimator(hdu[2].data['RAWX'], hdu[2].data['RAWY'], hdu[1].data['FLUX'], hdu[1].data['CADENCENO'])
+        self = Estimator(
+            hdu[2].data["RAWX"],
+            hdu[2].data["RAWY"],
+            hdu[1].data["FLUX"],
+            hdu[1].data["CADENCENO"],
+        )
         hdr = hdu[0].header
-        self.channel = hdr['CHANNEL']
-        self.mission = hdr['MISSION']
-        if 'QUARTER' in hdr:
-            self.quarter = hdr['QUARTER']
-        if 'CAMPAIGN' in hdr:
-            self.campaign = hdr['CAMPAIGN']
+        self.channel = hdr["CHANNEL"]
+        self.mission = hdr["MISSION"]
+        if "QUARTER" in hdr:
+            self.quarter = hdr["QUARTER"]
+        if "CAMPAIGN" in hdr:
+            self.campaign = hdr["CAMPAIGN"]
         return self
 
     def model(self, cadenceno, row=None, column=None):
         if row is not None:
-            if (self._model_row is None) | np.atleast_1d(((self._model_row != row) | (self._model_column != column))).any():
+            if (self._model_row is None) | np.atleast_1d(
+                ((self._model_row != row) | (self._model_column != column))
+            ).any():
                 self._model_row = row
                 self._model_column = column
                 self._model_A = self._make_A(row, column)
@@ -64,11 +88,7 @@ class Estimator:
             return self.A.dot(self.ws[np.in1d(self.cadenceno, cadenceno)][0])
 
     def __repr__(self):
-        if hasattr(self, 'quarter'):
-            return f'KBackground.Estimator Channel:{self.channel} Quarter:{self.quarter}'
-        if hasattr(self, 'campaign'):
-            return f'KBackground.Estimator Channel:{self.channel} Campaign:{self.campaign}'
-        return f'KBackground.Estimator'
+        return "KBackground.Estimator"
 
     @property
     def shape(self):
@@ -84,25 +104,16 @@ class Estimator:
             )
         )[1:-1]
 
-        # y_spline = sparse.csr_matrix(
-        #     np.asarray(
-        #         dmatrix(
-        #             "bs(x, knots=knots, degree=3, include_intercept=True)",
-        #             {"x": np.hstack([0, list(y), 1400]), "knots": self.yknots},
-        #         )
-        #     )
-        # )[1:-1]
-        # X = sparse.hstack(
-        #     [x_spline.multiply(y_spline[:, idx]) for idx in range(y_spline.shape[1])],
-        #     format="csr",
-        # )
+        y_spline = sparse.csr_matrix(
+            np.asarray(
+                dmatrix(
+                    "bs(x, knots=knots, degree=3, include_intercept=True)",
+                    {"x": np.hstack([0, list(y), 1400]), "knots": self.yknots},
+                )
+            )
+        )[1:-1]
         X = sparse.hstack(
-            [x_spline,
-             #y_spline,
-            # #x_spline.multiply(y[:, None] - y.mean()),
-            # y_spline.multiply(x[:, None] - x.mean()),
-            # y_spline.multiply((x[:, None] - x.mean())**2),
-            ],
+            [x_spline.multiply(y_spline[:, idx]) for idx in range(y_spline.shape[1])],
             format="csr",
         )
 
