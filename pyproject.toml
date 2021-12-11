@@ -1,0 +1,28 @@
+[tool.poetry]
+name = "kbackground"
+version = "0.1.0"
+description = ""
+authors = ["Christina Hedges <christina.l.hedges@nasa.gov>"]
+
+[tool.poetry.dependencies]
+python = ">=3.8,<3.11"
+numpy = "^1.21.4"
+scipy = "^1.7.3"
+patsy = "^0.5.2"
+astropy = "^5.0"
+
+[tool.poetry.dev-dependencies]
+pytest = "^5.2"
+flake8 = "^4.0.1"
+black = "^21.12b0"
+isort = "^5.10.1"
+mkdocs = "^1.2.3"
+mkdocs-material = "^8.1.0"
+mkdocstrings = "^0.16.2"
+jupyterlab = "^3.2.5"
+matplotlib = "^3.5.0"
+lightkurve = "^2.0.11"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
