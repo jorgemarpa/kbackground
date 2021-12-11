@@ -20,39 +20,39 @@ class Estimator:
         1D array of column positions for pixels to calculate the background model of with shape npixels
     flux : np.ndarray
         2D array of fluxes with shape ntimes x npixels
-    cadenceno : np.ndarray
-        1D array of cadence numbers with shape ntimes
     """
 
     row: np.ndarray
     column: np.ndarray
     flux: np.ndarray
-    cadenceno: np.ndarray
 
     def __post_init__(self):
         self.xknots, self.yknots = (
             np.linspace(20, 1108, 42)[1:-1],
             np.linspace(27, 1040, 8)[1:-1],
         )
-        self.mask = ~sigma_clip(np.median(self.flux, axis=0)).mask
-
         med_flux = np.median(self.flux, axis=0)[None, :]
-        self.flux_offset = np.median(self.flux - med_flux, axis=1)
+        f = self.flux - med_flux
+        # Mask out pixels that are particularly bright.
+        self.mask = ~sigma_clip(np.median(f, axis=0)).mask
+
+        self.flux_offset = np.median(f, axis=1)
 
         self.A = self._make_A(self.row, self.column)
         prior_mu = np.zeros(self.A.shape[1])
         prior_mu[0] = 1
         prior_mu = self.flux_offset[:, None] * prior_mu
-        prior_sigma = np.ones(self.A.shape[1]) * 40
+        # Hard coding a prior with 100 count width.
+        prior_sigma = np.ones(self.A.shape[1]) * 100
 
         self.sigma_w_inv = self.A[self.mask].T.dot(self.A[self.mask]) + np.diag(
             1 / prior_sigma ** 2
         )
         Bs = (
-            self.A[self.mask].T.dot((self.flux - med_flux)[:, self.mask].T)
+            self.A[self.mask].T.dot((f)[:, self.mask].T)
             + (prior_mu / prior_sigma ** 2).T
         )
-        self.ws = np.linalg.solve(self.sigma_w_inv, Bs).T
+        self.ws = np.linalg.solve(self.sigma_w_inv, Bs)
         self._model_row = self.row
         self._model_column = self.column
         self._model_A = self.A
@@ -64,18 +64,29 @@ class Estimator:
             hdu[2].data["RAWX"],
             hdu[2].data["RAWY"],
             hdu[1].data["FLUX"],
-            hdu[1].data["CADENCENO"],
         )
-        hdr = hdu[0].header
-        self.channel = hdr["CHANNEL"]
-        self.mission = hdr["MISSION"]
-        if "QUARTER" in hdr:
-            self.quarter = hdr["QUARTER"]
-        if "CAMPAIGN" in hdr:
-            self.campaign = hdr["CAMPAIGN"]
         return self
 
-    def model(self, cadenceno, row=None, column=None):
+    def model(self, index=None, row=None, column=None):
+        """returns the background model
+
+        Parameters
+        ----------
+        index : int
+            Index to provide model. If None, will model at all provided cadences.
+        row: np.ndarray
+            The row to provide the model at. Must be 1D. If none, will use the training dataset.
+        column: np.ndarray
+            The column to provide the model at. Must be 1D. If none, will use the training dataset.
+
+        Returns
+        -------
+        model: np.ndarray
+            The model flux. 2D array with shape nindex x npixels.
+        """
+        if index is None:
+            index = np.arange(self.shape[0])
+        index = np.atleast_1d(index)
         if row is not None:
             if (self._model_row is None) | np.atleast_1d(
                 ((self._model_row != row) | (self._model_column != column))
@@ -83,9 +94,9 @@ class Estimator:
                 self._model_row = row
                 self._model_column = column
                 self._model_A = self._make_A(row, column)
-            return self._model_A.dot(self.ws[np.in1d(self.cadenceno, cadenceno)][0])
+            return np.atleast_2d(self._model_A.dot(self.ws[:, index])).T
         else:
-            return self.A.dot(self.ws[np.in1d(self.cadenceno, cadenceno)][0])
+            return np.atleast_2d(self.A.dot(self.ws[:, index])).T
 
     def __repr__(self):
         return "KBackground.Estimator"
@@ -95,6 +106,7 @@ class Estimator:
         return self.flux.shape
 
     def _make_A(self, x, y):
+        """Makes a reasonable design matrix for the rolling band."""
         x_spline = sparse.csr_matrix(
             np.asarray(
                 dmatrix(

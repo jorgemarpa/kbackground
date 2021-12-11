@@ -1,1 +1,26 @@
-site_name: My Docs
+site_name: kbackground
+av:
+    - Home: index.md
+    - Demo: example.ipynb
+theme:
+  name: "material"
+  scheme: slate
+  primary: green
+  accent: red
+  icon:
+      logo: material/minus
+repo_url: https://github.com/SSDataLab/kbackground
+plugins:
+  - search
+  - mkdocs-jupyter
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          selection:
+            docstring_style: "numpy"
+          rendering:
+            show_source: false
+      custom_templates: templates
+      watch:
+        - src/kbackground
