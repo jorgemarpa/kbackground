@@ -1,8 +1,8 @@
-from kbackground import __version__
-from astropy.utils.data import get_pkg_data_filename
-from astropy.io import fits
 import numpy as np
-from kbackground import Estimator
+from astropy.io import fits
+from astropy.utils.data import get_pkg_data_filename
+
+from kbackground import Estimator, __version__
 
 
 def test_version():
