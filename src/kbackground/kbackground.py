@@ -34,7 +34,9 @@ class Estimator:
         med_flux = np.median(self.flux, axis=0)[None, :]
         f = self.flux - med_flux
         # Mask out pixels that are particularly bright.
-        self.mask = ~sigma_clip(np.median(f, axis=0)).mask
+        self.mask = med_flux[0] < 30
+        self.mask &= ~sigma_clip(med_flux[0]).mask
+        self.mask &= ~sigma_clip(np.std(f, axis=0)).mask
 
         self.flux_offset = np.median(f, axis=1)
 

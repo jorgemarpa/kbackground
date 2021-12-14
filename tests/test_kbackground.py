@@ -27,3 +27,4 @@ def test_kbackground():
     assert model.shape == (2, bkg.flux.shape[1])
     model = bkg.model()
     assert model.shape == bkg.flux.shape
+    assert bkg.mask.sum() != 0

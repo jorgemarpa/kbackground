@@ -1,11 +1,11 @@
-.PHONY: all clean pytest coverage flake8 black mypy isort
+.PHONY: all clean pytest coverage flake8 black isort
 
 CMD:=poetry run
 PYMODULE:=src
 TESTS:=tests
 
 # Run all the checks which do not change files
-all: mypy pytest flake8
+all: isort black flake8 pytest
 
 # Run the unit tests using `pytest`
 pytest:
