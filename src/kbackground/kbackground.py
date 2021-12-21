@@ -34,7 +34,9 @@ class Estimator:
         med_flux = np.median(self.flux, axis=0)[None, :]
         f = self.flux - med_flux
         # Mask out pixels that are particularly bright.
-        self.mask = med_flux[0] < 30
+        self.mask = (med_flux[0] - np.percentile(med_flux, 20)) < 30
+        if not self.mask.any():
+            raise ValueError("All the input pixels are brighter than 30 counts.")
         self.mask &= ~sigma_clip(med_flux[0]).mask
         self.mask &= ~sigma_clip(np.std(f, axis=0)).mask
 
