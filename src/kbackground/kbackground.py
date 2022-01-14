@@ -5,6 +5,7 @@ from astropy.io import fits
 from astropy.stats import sigma_clip
 from patsy import dmatrix
 from scipy import sparse
+from scipy.ndimage.filters import gaussian_filter1d
 
 
 @dataclass
@@ -33,6 +34,7 @@ class Estimator:
         )
         med_flux = np.median(self.flux, axis=0)[None, :]
         f = self.flux - med_flux
+        f = gaussian_filter1d(f, 2, axis=0)
         # Mask out pixels that are particularly bright.
         self.mask = (med_flux[0] - np.percentile(med_flux, 20)) < 30
         if not self.mask.any():
