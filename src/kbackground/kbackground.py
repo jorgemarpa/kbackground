@@ -29,7 +29,7 @@ class Estimator:
 
     def __post_init__(self):
         self.xknots, self.yknots = (
-            np.linspace(20, 1108, 42)[1:-1],
+            np.linspace(20, 1108, 62)[1:-1],
             np.linspace(27, 1040, 8)[1:-1],
         )
         med_flux = np.median(self.flux, axis=0)[None, :]
