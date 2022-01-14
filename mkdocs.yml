@@ -1,7 +1,7 @@
 site_name: kbackground
 nav:
     - Home: README.md
-    - Demo: example.ipynb
+    - Demo: example.md
     - API: kbackground.md
 theme:
   name: material
@@ -12,7 +12,6 @@ theme:
 repo_url: https://github.com/SSDataLab/kbackground
 plugins:
   - search
-  - mkdocs-jupyter
   - mkdocstrings:
       default_handler: python
       handlers:
