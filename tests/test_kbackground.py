@@ -6,7 +6,7 @@ from kbackground import Estimator, __version__
 
 
 def test_version():
-    assert __version__ == "0.1.5"
+    assert __version__ == "0.1.7"
 
 
 def test_kbackground():
@@ -19,12 +19,13 @@ def test_kbackground():
         np.arange(c, flux.shape[2] + c),
         np.arange(r, flux.shape[1] + r),
     )
+    time = hdu[1].data["TIME"]
     aper = np.ones(flux.shape[1:], bool)
-    bkg = Estimator(row[aper], column[aper], flux[:, aper])
-    model = bkg.model(0)
-    assert model.shape == (1, bkg.flux.shape[1])
-    model = bkg.model([0, 1])
-    assert model.shape == (2, bkg.flux.shape[1])
-    model = bkg.model()
+    bkg = Estimator(time, row[aper], column[aper], flux[:, aper])
+    model = bkg.model
     assert model.shape == bkg.flux.shape
+    # model = bkg.model([0, 1])
+    # assert model.shape == (2, bkg.flux.shape[1])
+    # model = bkg.model()
+    # assert model.shape == bkg.flux.shape
     assert bkg.mask.sum() != 0
