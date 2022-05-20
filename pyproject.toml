@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "kbackground"
-version = "0.1.6"
+version = "0.1.8"
 description = ""
 authors = ["Christina Hedges <christina.l.hedges@nasa.gov>"]
 
@@ -10,6 +10,7 @@ numpy = "^1.19.4"
 scipy = "^1.5.4"
 astropy = "^4.2"
 patsy = "^0.5.1"
+matplotlib = "^3.5.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
