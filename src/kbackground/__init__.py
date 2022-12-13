@@ -6,7 +6,7 @@ import logging  # noqa
 import os  # noqa
 
 PACKAGEDIR = os.path.abspath(os.path.dirname(__file__))
-__version__ = "0.1.8"
+__version__ = "0.1.9"
 
 log = logging.getLogger(__name__)
 logging.basicConfig(
