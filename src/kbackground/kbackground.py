@@ -109,8 +109,8 @@ class Estimator:
 
         def get_masks(xlim1, xlim2):
             x = np.arange(xlim1, xlim2, self.tknotspacing * 30)
-            a = np.max([x ** 0 * xlim1 - self.tknotspacing * 5, x], axis=0)
-            b = np.min([x ** 0 * xlim2, x + self.tknotspacing * 35], axis=0)
+            a = np.max([x**0 * xlim1 - self.tknotspacing * 5, x], axis=0)
+            b = np.min([x**0 * xlim2, x + self.tknotspacing * 35], axis=0)
             masks = np.asarray(
                 [np.in1d(self.time, self.time[a1:b1]) for a1, b1 in np.vstack([a, b]).T]
             )
@@ -168,7 +168,7 @@ class Estimator:
             prior_sigma = np.ones(self.A.shape[1]) * 100
             k = np.isfinite(self.bf[:, tm].ravel())
             log.debug(f"{tdx + 1}/{len(time_masks)} Creating `sigma_w_inv`")
-            sigma_w_inv = self.A[k].T.dot(self.A[k]) + np.diag(1 / prior_sigma ** 2)
+            sigma_w_inv = self.A[k].T.dot(self.A[k]) + np.diag(1 / prior_sigma**2)
             log.debug(f"{tdx + 1}/{len(time_masks)} Created `sigma_w_inv`")
             log.debug(f"{tdx + 1}/{len(time_masks)} Creating `B`")
             B = self.A[k].T.dot(self.bf[:, tm].ravel()[k])
